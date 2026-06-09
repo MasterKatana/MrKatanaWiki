@@ -1,90 +1,398 @@
 <!DOCTYPE html>
-<html>
+<html lang="en" dir="ltr">
 <head>
-  <meta charset="UTF-8">
-  <title>Anonymous Chat</title>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
-  <style>
-    body {
-      font-family: Arial;
-      background: #111;
-      color: white;
-      text-align: center;
-    }
-    #chat {
-      width: 90%;
-      max-width: 600px;
-      margin: 20px auto;
-      background: #222;
-      padding: 10px;
-      height: 400px;
-      overflow-y: auto;
-      border-radius: 10px;
-    }
-    input {
-      width: 70%;
-      padding: 10px;
-      border-radius: 5px;
-      border: none;
-    }
-    button {
-      padding: 10px;
-      border: none;
-      background: #00bcd4;
-      color: white;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilix | Minecraft Store</title>
+    <!-- لینک فونت‌ها -->
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    <link href="https://fonts.cdnfonts.com/css/minecraftia" rel="stylesheet">
+    <style>
+        /* تنظیمات کلی */
+        :root {
+            --bg-color: #f0f0f0;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --accent-color: #4a4a4a;
+            --border-color: #cccccc;
+            --mc-gray: #55aa55;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Minecrafter', 'VT323', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-size: 1.5rem;
+            line-height: 1.6;
+        }
+        /* ========================================= */
+        /*      کدهای جدید برای صفحه لودینگ          */
+        /* ========================================= */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.534); /* پس‌زمینه سفید شفاف */
+            z-index: 10000; /* بالاتر از همه چیز */
+            display: none; /* پیش‌فرض مخفی */
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+  
+        /* استایل اسپینر (چرخ‌دنده) */
+        .loader {
+            border: 8px solid #f3f3f3;
+            border-top: 8px solid var(--mc-gray); /* رنگ سبز ماینکرفت */
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+  
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+  
+        .loading-text {
+            font-family: 'VT323', monospace;
+            font-size: 2rem;
+            color: var(--accent-color);
+            letter-spacing: 2px;
+        }
+  
+        /* ========================================= */
+        /*      پایان کدهای لودینگ                   */
+        /* ========================================= */
+  
+        /* هدر سایت */
+        .header-wrapper {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            padding: 0 20px;
+        }
+        header {
+            background-color: var(--card-bg);
+            padding: 15px 40px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 1000px; /* هماهنگ با عرض تصویر */
+            max-width: 100%;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            border-radius: 25px;
+            border: 3px solid var(--accent-color);
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+        }
+        .logo {
+            font-family: 'Minecrafter', 'VT323', monospace;
+            font-size: 3rem;
+            letter-spacing: 2px;
+            color: var(--accent-color);
+            text-transform: uppercase;
+            font-weight: bold;
+            line-height: 1;
+            text-shadow: 2px 2px 0px rgba(0,0,0,0.1);
+        }
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-color);
+            font-size: 1.5rem;
+            font-family: 'VT323', monospace;
+            font-weight: bold;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: var(--mc-gray);
+        }
+        /* دکمه لاگین */
+        .login-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 45px;
+            height: 45px;
+            background-color: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            font-size: 1.2rem;
+            transition: all 0.3s;
+            border: 2px solid #222;
+            margin-left: 10px;
+        }
+        .login-btn:hover {
+            background-color: #222;
+            transform: scale(1.1);
+        }
+        /* بخش عکس اصلی (Hero) */
+        .hero-section {
+            width: 1000px; /* عرض ثابت برای کاهش عرض */
+            max-width: 100%; /* برای موبایل */
+            height: 400px;
+            overflow: hidden;
+            margin: 0 auto 40px auto; /* وسط‌چین کردن */
+            border-radius: 25px;
+            border: 4px solid var(--accent-color);
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.2);
+        }
+        .hero-section img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        /* بخش محصولات */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .section-title {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            border-bottom: 4px dashed var(--border-color);
+            display: inline-block;
+            padding-bottom: 10px;
+            display: block;
+        }
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 60px;
+        }
+        .product-card {
+            background-color: var(--card-bg);
+            border: 4px solid var(--accent-color);
+            border-radius: 20px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 6px 6px 0px rgba(0,0,0,0.15);
+        }
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 8px 8px 0px rgba(0,0,0,0.25);
+        }
+        .product-image {
+            width: 100%;
+            height: 160px;
+            background-color: #333333;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ddd;
+            overflow: hidden;
+            border-radius: 12px;
+        }
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s;
+        }
+        .product-card:hover .product-image img {
+            transform: scale(1.05);
+        }
+        .product-title {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+            color: #222;
+        }
+        .product-price {
+            font-size: 1.3rem;
+            color: var(--mc-gray);
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        .btn {
+            display: inline-block;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            border: 2px solid #222;
+            cursor: pointer;
+            font-family: 'VT323', monospace;
+            border-radius: 8px;
+            transition: background-color 0.2s;
+            width: 100%;
+        }
+        .btn:hover {
+            background-color: var(--mc-gray);
+            border-color: #222;
+        }
+        /* فوتر */
+        footer {
+            background-color: var(--card-bg);
+            border-top: 4px solid var(--accent-color);
+            padding: 40px 20px;
+            margin-top: 40px;
+            text-align: center;
+        }
+        .about-text {
+            max-width: 800px;
+            margin: 0 auto;
+            font-size: 1.3rem;
+            color: #555;
+            line-height: 1.8;
+        }
+        .highlight {
+            color: var(--accent-color);
+            font-weight: bold;
+            font-size: 1.4rem;
+        }
+        /* ریسپانسیو برای موبایل */
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                gap: 15px;
+                padding: 15px;
+                width: 90%;
+            }
+            .logo {
+                font-size: 2.5rem;
+                margin-bottom: 5px;
+            }
+            .nav-right {
+                width: 100%;
+                display: flex;
+                justify-content: flex-end;
+            }
+            .nav-links {
+                width: 100%;
+                justify-content: center;
+            }
+            .hero-section {
+                width: 90%; /* در موبایل عرض کمتری بگیرد */
+                height: 200px;
+            }
+            .about-text {
+                font-size: 1.1rem;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
-
-<h2>چت ناشناس 💬</h2>
-
-<div id="chat"></div>
-
-<input type="text" id="message" placeholder="پیام بنویس...">
-<button onclick="sendMessage()">ارسال</button>
-
-<script>
-  // 🔴 این قسمت رو با اطلاعات Firebase خودت جایگزین کن
-  const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_AUTH_DOMAIN",
-    databaseURL: "YOUR_DATABASE_URL",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_STORAGE_BUCKET",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
-  };
-
-  firebase.initializeApp(firebaseConfig);
-  const database = firebase.database();
-
-  function sendMessage() {
-    const message = document.getElementById("message").value;
-    if(message.trim() === "") return;
-
-    database.ref("messages").push({
-      text: message,
-      time: Date.now()
-    });
-
-    document.getElementById("message").value = "";
-  }
-
-  database.ref("messages").on("child_added", function(snapshot) {
-    const data = snapshot.val();
-    const chat = document.getElementById("chat");
-
-    const messageElement = document.createElement("p");
-    messageElement.textContent = data.text;
-    chat.appendChild(messageElement);
-
-    chat.scrollTop = chat.scrollHeight;
-  });
-</script>
-
+  
+    <!-- ========================================= -->
+    <!--      بخش لودینگ (Loading Screen)          -->
+    <!-- ========================================= -->
+    <div id="loading-screen">
+        <div class="loader"></div>
+        <div class="loading-text">Loading Pilix...</div>
+    </div>
+  
+    <!-- کانتینر هدر -->
+    <div class="header-wrapper">
+        <header>
+            <!-- منوی سمت چپ -->
+            <nav class="nav-left">
+                <ul class="nav-links">
+                    <!-- تغییر href به onclick برای فعال کردن لودینگ -->
+                    <li><a href="#" onclick="showLoading('Shop.html')">Shop</a></li>
+                </ul>
+            </nav>
+            <!-- لوگو وسط -->
+            <div class="logo">
+                Pilix
+            </div>
+            <!-- دکمه لاگین سمت راست -->
+            <nav class="nav-right">
+                <!-- تغییر href به onclick برای فعال کردن لودینگ -->
+                <a href="#" onclick="showLoading('login.html')" class="login-btn" title="Login">👤</a>
+            </nav>
+        </header>
+    </div>
+    <!-- بخش عکس اصلی -->
+    <section class="hero-section">
+        <img src="https://uploadkon.ir/uploads/128725_26Untitled181-20260525164652.png">
+    </section>
+    <!-- بخش محصولات -->
+    <div class="container">
+        <h2 class="section-title">Special Products</h2>
+        <div class="products-grid">
+            <!-- محصول ۱ -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://uploadkon.ir/uploads/da6725_26aaaa.gif">
+                </div>
+                <h3 class="product-title">GameOver Cape</h3>
+                <p class="product-price">100,000 IRT</p>
+                <a href="#" class="btn">Add To Cart</a>
+            </div>
+            <!-- محصول ۲ -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://uploadkon.ir/uploads/11e025_26modaaaael.gif">
+                </div>
+                <h3 class="product-title">Hack Cape</h3>
+                <p class="product-price">190,000 IRT</p>
+                <a href="#" class="btn">Add To Cart</a>
+            </div>
+            <!-- محصول ۳ -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://uploadkon.ir/uploads/473e25_26coffe.gif">
+                </div>
+                <h3 class="product-title">Coffee Cape</h3>
+                <p class="product-price">90,000 IRT</p>
+                <a href="#" class="btn">Add To Cart</a>
+            </div>
+            <!-- محصول ۴ -->
+            <div class="product-card">
+                <div class="product-image">
+                    <img src="https://uploadkon.ir/uploads/38df25_26waish.gif">
+                </div>
+                <h3 class="product-title">Waish Eye Cape</h3>
+                <p class="product-price">70,000 IRT</p>
+                <a href="#" class="btn">Add To Cart</a>
+            </div>
+        </div>
+    </div>
+    <!-- فوتر -->
+    <footer>
+        <h2 style="margin-bottom: 20px; color: var(--accent-color);">About Pilix</h2>
+        <p class="about-text">
+            Hello! <span class="highlight">Pilix</span> is a fully Minecraft-themed store, serving you with the production and sale of various Minecraft Kaps. We are honored to always provide you with the best price and quality among all stores :)
+        </p>
+        <p style="margin-top: 30px; font-size: 1rem; color: #888;">© 2026 Pilix Store. All rights reserved.</p>
+    </footer>
+  
+    <script>
+        // تابعی که وقتی روی لینک کلیک می‌شود اجرا می‌شود
+        function showLoading(url) {
+            // 1. نمایش صفحه لودینگ
+            document.getElementById('loading-screen').style.display = 'flex';
+            // 2. رفتن به صفحه مورد نظر بعد از یک لحظه کوتاه (برای دیده شدن انیمیشن)
+            setTimeout(function() {
+                window.location.href = url;
+            }, 800); // 800 میلی‌ثانیه (کمتر از 1 ثانیه) صبر می‌کند تا لودینگ دیده شود
+        }
+    </script>
 </body>
 </html>
